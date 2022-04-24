@@ -8,6 +8,11 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Entity\Product;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Validation;
 
 class ProductController extends AbstractController
 {
@@ -21,6 +26,30 @@ class ProductController extends AbstractController
         ]);
     }
 
+    /**
+     * @Route("/api/products", methods={"POST"})
+     */
+    public function add(ValidatorInterface $validator, Request $request): Response
+    {
+        $data = json_decode($request->getContent(), true);
+        $product = new Product();
+        $product->setName($data["product_name"]);
+        $product->setPrice($data["product_price"]);
+        $errors = $validator->validate($product);
+
+        if (count($errors) > 0) {
+            /*
+             * Uses a __toString method on the $errors variable which is a
+             * ConstraintViolationList object. This gives us a nice string
+             * for debugging.
+             */
+            $errorsString = (string) $errors;
+    
+            return new Response($errorsString);
+        }
+    
+        return new Response('The author is valid! Yes!');
+    }
 
     /**
      * @Route("/api/products/{id}", methods={"GET","HEAD"})
